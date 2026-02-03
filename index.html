@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Crypto AI Predictor 4.5 Secure</title>
+    <title>Gemini Crypto AI Predictor 4.7 Remote Control</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js cho biểu đồ -->
@@ -42,14 +42,14 @@
     <aside class="w-96 bg-[#141414] flex flex-col border-r border-gray-800 shadow-2xl z-20">
         <div class="p-6 border-b border-gray-800 text-center">
             <h1 class="text-xl font-bold tracking-widest text-[#3b8ed0] flex items-center justify-center gap-2">
-                <i class="fa-solid fa-shield-halved"></i> GEMINI SECURE
+                <i class="fa-solid fa-satellite-dish"></i> GEMINI REMOTE
             </h1>
             <div class="flex items-center justify-center gap-2 mt-2">
                 <span class="relative flex h-2 w-2">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                <p class="text-[10px] text-gray-500 font-mono uppercase">System Active</p>
+                <p class="text-[10px] text-gray-500 font-mono uppercase">Listening for Commands...</p>
             </div>
         </div>
 
@@ -145,12 +145,17 @@
                 </div>
             </div>
 
-            <!-- AUTOMATION & TELEGRAM -->
+            <!-- AUTOMATION & TELEGRAM CONTROL -->
             <div class="bg-[#1e1e1e] p-4 rounded-xl border border-gray-700 border-l-4 border-l-purple-500">
                 <h3 class="text-xs font-bold text-purple-400 uppercase mb-3 flex items-center gap-2">
-                    <i class="fa-brands fa-telegram"></i> Auto-Bot Controller
+                    <i class="fa-brands fa-telegram"></i> Auto-Bot & Remote
                 </h3>
                 
+                <div class="flex justify-between items-center mb-2">
+                    <div class="text-[9px] text-gray-400">*Treo tab này để bot hoạt động.</div>
+                    <button onclick="copyBotCommands()" class="text-[9px] text-[#3b8ed0] hover:underline hover:text-white cursor-pointer transition-colors" title="Copy lệnh để cài đặt BotFather">📋 Copy Lệnh Menu</button>
+                </div>
+
                 <div class="space-y-2 mb-4">
                     <div>
                         <label class="block text-[10px] text-gray-500">Chu kỳ báo cáo (Giờ)</label>
@@ -168,7 +173,12 @@
                     </label>
                     <div id="autoStatusIcon" class="hidden animate-pulse text-green-500 text-xs"><i class="fa-solid fa-circle"></i> Running</div>
                 </div>
-                <div id="nextRunTime" class="text-[10px] text-[#3b8ed0] mt-2 font-mono text-right h-4 font-bold"></div>
+                
+                <!-- Polling Status -->
+                <div class="flex justify-between items-center mt-2">
+                    <div id="pollingStatus" class="text-[9px] text-gray-600">Polling: Off</div>
+                    <div id="nextRunTime" class="text-[10px] text-[#3b8ed0] font-mono font-bold"></div>
+                </div>
             </div>
 
             <!-- Analyze Button (Manual) -->
@@ -290,23 +300,39 @@
     <!-- JAVASCRIPT LOGIC -->
     <script>
         // --- CẤU HÌNH ---
-        // LƯU Ý: Đã xóa toàn bộ KEY cứng để bảo mật khi upload lên GitHub.
-        // Hệ thống sẽ sử dụng LocalStorage để lưu key của bạn.
-        
         const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025"; 
         
         let currentPair = "BTCUSDT";
         let allSymbols = [];
         let updateInterval = null;
         
-        // --- AUTO BOT HEARTBEAT SYSTEM ---
+        // --- AUTO BOT & REMOTE CONTROL ---
         let botIntervalId = null; 
         let nextRunTime = 0;      
+        let lastUpdateId = 0; // Để theo dõi tin nhắn Telegram đã đọc
+        let pollingInterval = null;
         // ---------------------------------
 
         let chartInstance = null;
         let marketDataGlobal = null;
         let currentPnLData = { pnl: 0, percent: 0, isProfit: false };
+
+        // --- HELPER: COPY COMMANDS ---
+        function copyBotCommands() {
+            const commands = `pair - Đổi cặp (VD: /pair BTCUSDT)
+entry - Đổi Entry (VD: /entry 50000)
+long - Đổi sang LONG (Tăng)
+short - Đổi sang SHORT (Giảm)
+now - Chạy phân tích ngay
+help - Xem hướng dẫn chi tiết`;
+            
+            navigator.clipboard.writeText(commands).then(() => {
+                alert("Đã copy danh sách lệnh!\n\nCách cài đặt menu trong Telegram:\n1. Chat với @BotFather\n2. Gõ /mybots -> Chọn Bot của bạn\n3. Chọn 'Edit Bot' -> 'Edit Commands'\n4. Dán danh sách vừa copy vào và gửi.");
+            }).catch(err => {
+                console.error('Could not copy text: ', err);
+                alert("Không thể copy tự động. Vui lòng copy thủ công từ console hoặc code.");
+            });
+        }
 
         // --- LOCAL STORAGE MANAGER ---
         function loadCredentials() {
@@ -409,8 +435,20 @@
             }
         }
 
-        // --- TELEGRAM NOTIFICATION ---
-        async function sendTelegram(aiTrend, aiTarget) {
+        // --- TELEGRAM SENDING ---
+        async function sendMessageToChat(chatId, text) {
+            const token = document.getElementById('teleToken').value.trim();
+            if (!token || !chatId) return;
+            try {
+                await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'Markdown' })
+                });
+            } catch (e) { console.error("Send error", e); }
+        }
+
+        async function sendReportTelegram(aiTrend, aiTarget) {
             const token = document.getElementById('teleToken').value.trim();
             const chatId = document.getElementById('teleChatId').value.trim();
 
@@ -420,7 +458,7 @@
             }
 
             const positionRaw = document.getElementById('userPosition').value;
-            const positionText = positionRaw === 'LONG' ? "Dự đoán TĂNG 📈 (LONG)" : "Dự đoán GIẢM 📉 (SHORT)";
+            const positionText = positionRaw === 'LONG' ? "Dự đoán TĂNG 📈" : "Dự đoán GIẢM 📉";
             const entry = document.getElementById('userEntry').value;
             const amount = document.getElementById('userAmount').value;
             
@@ -455,31 +493,112 @@ ${pnlHeader}
 • Xu hướng: ${aiTrend} ${trendIcon}
 • Target: ${aiTarget} USDT
 ━━━━━━━━━━━━━━━━━━
-_Auto-Bot Secure v4.5_
+_Reply các lệnh sau để điều khiển:_
+/pair [MÃ] - Đổi cặp (VD: /pair ETHUSDT)
+/entry [GIÁ] - Đổi entry (VD: /entry 2800)
+/long hoặc /short - Đổi vị thế
+/now - Phân tích ngay
             `;
 
+            await sendMessageToChat(chatId, message);
+            updateStatus("Đã gửi báo cáo Telegram!", "process");
+        }
+
+        // --- TELEGRAM POLLING (REMOTE CONTROL) ---
+        async function pollTelegramCommands() {
+            const token = document.getElementById('teleToken').value.trim();
+            if (!token) return;
+
             try {
-                const url = `https://api.telegram.org/bot${token}/sendMessage`;
-                await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        chat_id: chatId,
-                        text: message,
-                        parse_mode: 'Markdown'
-                    })
-                });
-                updateStatus("Đã gửi báo cáo Telegram!", "process");
+                // Polling updates (Long polling or short interval)
+                const offset = lastUpdateId + 1;
+                const res = await fetch(`https://api.telegram.org/bot${token}/getUpdates?offset=${offset}&limit=5&timeout=0`);
+                const data = await res.json();
+
+                if (data.ok && data.result.length > 0) {
+                    for (const update of data.result) {
+                        lastUpdateId = update.update_id;
+                        if (update.message && update.message.text) {
+                            await processCommand(update.message.text, update.message.chat.id);
+                        }
+                    }
+                }
             } catch (e) {
-                console.error("Lỗi gửi Telegram", e);
-                updateStatus("Lỗi gửi Telegram", "error");
+                console.error("Polling error", e);
             }
+        }
+
+        async function processCommand(text, chatId) {
+            const cmd = text.trim().split(' ');
+            const command = cmd[0].toLowerCase();
+            const arg = cmd[1] ? cmd[1].toUpperCase() : null;
+
+            let reply = "";
+
+            if (command === '/start' || command === '/help') {
+                reply = "🤖 *REMOTE COMMANDS:*\n`/pair [SYMBOL]` - Đổi cặp coin (VD: /pair ETHUSDT)\n`/entry [PRICE]` - Đổi giá vào (VD: /entry 2500)\n`/long` - Chọn Long (Lên)\n`/short` - Chọn Short (Xuống)\n`/now` - Phân tích ngay lập tức";
+            }
+            else if (command === '/pair' && arg) {
+                // Set pair
+                document.getElementById('pairSearch').value = arg;
+                filterPairs();
+                
+                // Validate if pair exists in list
+                const select = document.getElementById('pairSelect');
+                let found = false;
+                for (let i = 0; i < select.options.length; i++) {
+                    if (select.options[i].value === arg) {
+                        select.selectedIndex = i;
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (found) {
+                    handlePairChange();
+                    reply = `✅ Đã chuyển sang cặp *${arg}*. Đang lấy dữ liệu...`;
+                } else {
+                    reply = `❌ Không tìm thấy cặp *${arg}* trên Binance. Thử lại (VD: BTCUSDT).`;
+                }
+            }
+            else if (command === '/entry' && arg) {
+                const price = parseFloat(arg);
+                if (!isNaN(price)) {
+                    document.getElementById('userEntry').value = price;
+                    calculatePnL(marketDataGlobal?.currentPrice || 0);
+                    reply = `✅ Đã cập nhật Entry Price: *${price}*`;
+                } else {
+                    reply = "❌ Giá không hợp lệ.";
+                }
+            }
+            else if (command === '/long') {
+                document.getElementById('userPosition').value = 'LONG';
+                calculatePnL(marketDataGlobal?.currentPrice || 0);
+                reply = "✅ Đã chuyển sang dự đoán: *LONG (Tăng)*";
+            }
+            else if (command === '/short') {
+                document.getElementById('userPosition').value = 'SHORT';
+                calculatePnL(marketDataGlobal?.currentPrice || 0);
+                reply = "✅ Đã chuyển sang dự đoán: *SHORT (Giảm)*";
+            }
+            else if (command === '/now') {
+                reply = "⏳ Đang chạy phân tích AI theo yêu cầu...";
+                await sendMessageToChat(chatId, reply);
+                startAnalysis(true); // Trigger Auto Analysis logic
+                return; // startAnalysis sends its own report
+            }
+            else {
+                reply = "❓ Lệnh không hiểu. Gõ `/help` để xem hướng dẫn.";
+            }
+
+            await sendMessageToChat(chatId, reply);
         }
 
         // --- AUTO BOT LOGIC ---
         function toggleAutoRun() {
             const isChecked = document.getElementById('autoToggle').checked;
             const statusIcon = document.getElementById('autoStatusIcon');
+            const pollingStatus = document.getElementById('pollingStatus');
             const gKey = document.getElementById('geminiApiKey').value;
 
             if (isChecked) {
@@ -491,16 +610,24 @@ _Auto-Bot Secure v4.5_
                 const hours = parseFloat(document.getElementById('autoInterval').value) || 1;
                 updateStatus(`Auto-Bot ON: Chu kỳ ${hours} giờ`, "process");
                 statusIcon.classList.remove('hidden');
+                pollingStatus.textContent = "Polling: Active (Remote ON)";
+                pollingStatus.className = "text-[9px] text-green-500 animate-pulse";
 
                 startAnalysis(true);
                 scheduleNextRun(hours);
                 
+                // Start Heartbeat & Polling
                 if (!botIntervalId) {
-                     botIntervalId = setInterval(botHeartbeat, 1000); 
+                     botIntervalId = setInterval(() => {
+                         botHeartbeat();
+                         pollTelegramCommands(); // Check telegram commands every second too
+                     }, 2000); // Check every 2s to be safe
                 }
             } else {
                 updateStatus("Đã tắt Auto-Bot", "normal");
                 statusIcon.classList.add('hidden');
+                pollingStatus.textContent = "Polling: Off";
+                pollingStatus.className = "text-[9px] text-gray-600";
                 document.getElementById('nextRunTime').textContent = "";
                 if (botIntervalId) {
                     clearInterval(botIntervalId);
@@ -744,7 +871,7 @@ _Auto-Bot Secure v4.5_
 
                 // Send Telegram Notification
                 if (document.getElementById('autoToggle').checked || isAuto) {
-                    await sendTelegram(json.trend, json.price_target);
+                    await sendReportTelegram(json.trend, json.price_target);
                 }
                 
                 updateStatus("Phân tích hoàn tất", "normal");
