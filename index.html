@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Crypto AI Predictor 4.7 Remote Control</title>
+    <title>Gemini Crypto AI Predictor 4.9.2 Time Control</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Chart.js cho biểu đồ -->
@@ -49,34 +49,34 @@
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
                 </span>
-                <p class="text-[10px] text-gray-500 font-mono uppercase">Listening for Commands...</p>
+                <p class="text-[10px] text-gray-500 font-mono uppercase">System Online v4.9.2</p>
             </div>
         </div>
 
         <div class="p-5 flex-1 overflow-y-auto space-y-6">
             
-            <!-- Settings & API Keys (BẢO MẬT) -->
+            <!-- Settings & API Keys (BẢO MẬT - KHÔNG LƯU) -->
             <div class="bg-[#1e1e1e] p-4 rounded-xl border border-gray-700">
                 <h3 class="text-xs font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-key"></i> Cấu hình Bảo mật
+                    <i class="fa-solid fa-key"></i> Cấu hình (Không lưu)
                 </h3>
                 <div class="space-y-2">
                     <div>
                         <label class="block text-[10px] text-gray-500 mb-1">Telegram Bot Token</label>
-                        <input type="password" id="teleToken" placeholder="Dán Token vào đây..." onchange="saveCredentials()"
+                        <input type="password" id="teleToken" placeholder="Dán Token vào đây..." autocomplete="off"
                                class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono focus:border-[#3b8ed0] transition-colors">
                     </div>
                     <div>
                         <label class="block text-[10px] text-gray-500 mb-1">Telegram Chat ID</label>
-                        <input type="password" id="teleChatId" placeholder="Dán Chat ID vào đây..." onchange="saveCredentials()"
+                        <input type="password" id="teleChatId" placeholder="Dán Chat ID vào đây..." autocomplete="off"
                                class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono focus:border-[#3b8ed0] transition-colors">
                     </div>
                     <div>
                          <label class="block text-[10px] text-gray-500 mb-1">Gemini API Key</label>
-                         <input type="password" id="geminiApiKey" placeholder="AIzaSy..." onchange="saveCredentials()"
+                         <input type="password" id="geminiApiKey" placeholder="AIzaSy..." autocomplete="off"
                                 class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono focus:border-[#3b8ed0] transition-colors">
                     </div>
-                    <p class="text-[9px] text-green-500 italic mt-1"><i class="fa-solid fa-lock"></i> Key được lưu cục bộ trên máy bạn.</p>
+                    <p class="text-[9px] text-gray-500 italic mt-1"><i class="fa-solid fa-shield-halved"></i> Thông tin sẽ bị xóa khi tải lại trang.</p>
                 </div>
             </div>
 
@@ -158,10 +158,15 @@
 
                 <div class="space-y-2 mb-4">
                     <div>
-                        <label class="block text-[10px] text-gray-500">Chu kỳ báo cáo (Giờ)</label>
-                        <input type="number" id="autoInterval" value="1" min="0.01" step="0.01" onchange="updateAutoIntervalIfRunning()"
-                               class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono"
-                               title="Nhập 1 cho 1 giờ, 0.5 cho 30 phút, 0.01 cho thử nghiệm nhanh">
+                        <label class="block text-[10px] text-gray-500">Chu kỳ chạy (Giờ)</label>
+                        <div class="flex gap-2">
+                            <input type="number" id="autoInterval" value="1" min="0.01" step="0.01"
+                                   class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono"
+                                   title="Nhập 1 cho 1 giờ, 0.5 cho 30 phút, 0.01 cho thử nghiệm nhanh">
+                            <button onclick="updateAutoIntervalIfRunning()" class="bg-gray-700 hover:bg-gray-600 px-3 rounded text-[10px] font-bold text-white transition-colors border border-gray-600 hover:border-[#3b8ed0] whitespace-nowrap">
+                                <i class="fa-solid fa-save"></i> Lưu
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -323,6 +328,8 @@
 entry - Đổi Entry (VD: /entry 50000)
 long - Đổi sang LONG (Tăng)
 short - Đổi sang SHORT (Giảm)
+interval - Đổi chu kỳ chạy (VD: /interval 1)
+time - Đổi thời gian đích (VD: /time 2026-02-04 14:00)
 now - Chạy phân tích ngay
 help - Xem hướng dẫn chi tiết`;
             
@@ -334,32 +341,9 @@ help - Xem hướng dẫn chi tiết`;
             });
         }
 
-        // --- LOCAL STORAGE MANAGER ---
-        function loadCredentials() {
-            const tToken = localStorage.getItem('CRYPTO_AI_TELE_TOKEN');
-            const tChatId = localStorage.getItem('CRYPTO_AI_TELE_CHATID');
-            const gApiKey = localStorage.getItem('CRYPTO_AI_GEMINI_KEY');
-
-            if(tToken) document.getElementById('teleToken').value = tToken;
-            if(tChatId) document.getElementById('teleChatId').value = tChatId;
-            if(gApiKey) document.getElementById('geminiApiKey').value = gApiKey;
-            
-            if(tToken && tChatId && gApiKey) updateStatus("Đã tải cấu hình từ máy", "normal");
-            else updateStatus("Vui lòng nhập API Key & Bot Token", "error");
-        }
-
-        function saveCredentials() {
-            const tToken = document.getElementById('teleToken').value.trim();
-            const tChatId = document.getElementById('teleChatId').value.trim();
-            const gApiKey = document.getElementById('geminiApiKey').value.trim();
-
-            if(tToken) localStorage.setItem('CRYPTO_AI_TELE_TOKEN', tToken);
-            if(tChatId) localStorage.setItem('CRYPTO_AI_TELE_CHATID', tChatId);
-            if(gApiKey) localStorage.setItem('CRYPTO_AI_GEMINI_KEY', gApiKey);
-            
-            updateStatus("Đã lưu cấu hình vào máy!", "process");
-        }
-
+        // --- NO-SAVE LOCAL STORAGE (REMOVED) ---
+        // Phần này đã xóa để đảm bảo quyền riêng tư.
+        // Dữ liệu nhập vào sẽ mất khi reload.
 
         // Set default date (Next 24h)
         const dateInput = document.getElementById('targetDate');
@@ -448,7 +432,7 @@ help - Xem hướng dẫn chi tiết`;
             } catch (e) { console.error("Send error", e); }
         }
 
-        async function sendReportTelegram(aiTrend, aiTarget) {
+        async function sendReportTelegram(aiTrend, aiTarget, reasoning) {
             const token = document.getElementById('teleToken').value.trim();
             const chatId = document.getElementById('teleChatId').value.trim();
 
@@ -474,6 +458,8 @@ help - Xem hướng dẫn chi tiết`;
 
             const trendIcon = aiTrend.includes("TĂNG") ? "🚀" : "🩸";
             const nowTime = new Date().toLocaleTimeString('vi-VN');
+            const targetDate = document.getElementById('targetDate').value;
+            const targetDateStr = targetDate ? new Date(targetDate).toLocaleString('vi-VN') : 'Sắp tới';
 
             const message = `
 🔔 *CRYPTO AUTO REPORT* - ${nowTime}
@@ -489,15 +475,15 @@ help - Xem hướng dẫn chi tiết`;
 ${pnlHeader}
 (ROI: ${pnlPercent}%)
 ━━━━━━━━━━━━━━━━━━
-🧠 *AI GEMINI DỰ BÁO:*
+🧠 *AI GEMINI DỰ BÁO (${targetDateStr}):*
 • Xu hướng: ${aiTrend} ${trendIcon}
 • Target: ${aiTarget} USDT
+
+📝 *CHI TIẾT PHÂN TÍCH:*
+${reasoning}
 ━━━━━━━━━━━━━━━━━━
-_Reply các lệnh sau để điều khiển:_
-/pair [MÃ] - Đổi cặp (VD: /pair ETHUSDT)
-/entry [GIÁ] - Đổi entry (VD: /entry 2800)
-/long hoặc /short - Đổi vị thế
-/now - Phân tích ngay
+_Reply để điều khiển:_
+/pair [MÃ] | /entry [GIÁ] | /time [NGÀY GIỜ] | /now
             `;
 
             await sendMessageToChat(chatId, message);
@@ -529,25 +515,25 @@ _Reply các lệnh sau để điều khiển:_
         }
 
         async function processCommand(text, chatId) {
-            const cmd = text.trim().split(' ');
-            const command = cmd[0].toLowerCase();
-            const arg = cmd[1] ? cmd[1].toUpperCase() : null;
+            // Tách lệnh và tham số (hỗ trợ nhiều từ)
+            const parts = text.trim().split(/\s+/);
+            const command = parts[0].toLowerCase();
+            const fullArg = parts.slice(1).join(' '); // Lấy toàn bộ phần sau lệnh (cho ngày giờ)
+            const firstArg = parts[1] ? parts[1].toUpperCase() : null; // Lấy tham số đầu (cho mã coin)
 
             let reply = "";
 
             if (command === '/start' || command === '/help') {
-                reply = "🤖 *REMOTE COMMANDS:*\n`/pair [SYMBOL]` - Đổi cặp coin (VD: /pair ETHUSDT)\n`/entry [PRICE]` - Đổi giá vào (VD: /entry 2500)\n`/long` - Chọn Long (Lên)\n`/short` - Chọn Short (Xuống)\n`/now` - Phân tích ngay lập tức";
+                reply = "🤖 *REMOTE COMMANDS:*\n`/pair [SYMBOL]` - Đổi cặp coin (VD: /pair ETHUSDT)\n`/entry [PRICE]` - Đổi giá vào (VD: /entry 2500)\n`/long` - Chọn Long (Lên)\n`/short` - Chọn Short (Xuống)\n`/time [YYYY-MM-DD HH:mm]` - Đổi thời gian phân tích\n`/interval [HOUR]` - Đổi chu kỳ (VD: 1)\n`/now` - Phân tích ngay lập tức";
             }
-            else if (command === '/pair' && arg) {
-                // Set pair
-                document.getElementById('pairSearch').value = arg;
+            else if (command === '/pair' && firstArg) {
+                document.getElementById('pairSearch').value = firstArg;
                 filterPairs();
                 
-                // Validate if pair exists in list
                 const select = document.getElementById('pairSelect');
                 let found = false;
                 for (let i = 0; i < select.options.length; i++) {
-                    if (select.options[i].value === arg) {
+                    if (select.options[i].value === firstArg) {
                         select.selectedIndex = i;
                         found = true;
                         break;
@@ -556,13 +542,13 @@ _Reply các lệnh sau để điều khiển:_
                 
                 if (found) {
                     handlePairChange();
-                    reply = `✅ Đã chuyển sang cặp *${arg}*. Đang lấy dữ liệu...`;
+                    reply = `✅ Đã chuyển sang cặp *${firstArg}*. Đang lấy dữ liệu...`;
                 } else {
-                    reply = `❌ Không tìm thấy cặp *${arg}* trên Binance. Thử lại (VD: BTCUSDT).`;
+                    reply = `❌ Không tìm thấy cặp *${firstArg}* trên Binance. Thử lại (VD: BTCUSDT).`;
                 }
             }
-            else if (command === '/entry' && arg) {
-                const price = parseFloat(arg);
+            else if (command === '/entry' && firstArg) {
+                const price = parseFloat(firstArg);
                 if (!isNaN(price)) {
                     document.getElementById('userEntry').value = price;
                     calculatePnL(marketDataGlobal?.currentPrice || 0);
@@ -581,11 +567,44 @@ _Reply các lệnh sau để điều khiển:_
                 calculatePnL(marketDataGlobal?.currentPrice || 0);
                 reply = "✅ Đã chuyển sang dự đoán: *SHORT (Giảm)*";
             }
+            else if (command === '/time' && fullArg) {
+                // Xử lý ngày giờ: Chuyển khoảng trắng thành T để khớp format datetime-local
+                let timeStr = fullArg.replace(' ', 'T');
+                const date = new Date(timeStr);
+                
+                if (!isNaN(date.getTime())) {
+                    // Lấy format YYYY-MM-DDTHH:mm cho input type="datetime-local"
+                    // Lưu ý: toISOString trả về UTC, cần xử lý offset múi giờ nếu muốn chính xác local
+                    // Cách đơn giản nhất để hiển thị đúng input là format thủ công chuỗi
+                    const year = date.getFullYear();
+                    const month = String(date.getMonth() + 1).padStart(2, '0');
+                    const day = String(date.getDate()).padStart(2, '0');
+                    const hour = String(date.getHours()).padStart(2, '0');
+                    const minute = String(date.getMinutes()).padStart(2, '0');
+                    
+                    const isoLocal = `${year}-${month}-${day}T${hour}:${minute}`;
+                    document.getElementById('targetDate').value = isoLocal;
+                    
+                    reply = `✅ Đã cập nhật thời gian phân tích: *${fullArg}*`;
+                } else {
+                    reply = "❌ Định dạng ngày lỗi. Dùng: YYYY-MM-DD HH:mm (Ví dụ: /time 2026-02-04 14:00)";
+                }
+            }
+            else if (command === '/interval' && firstArg) {
+                const hours = parseFloat(firstArg);
+                if (!isNaN(hours) && hours > 0) {
+                    document.getElementById('autoInterval').value = hours;
+                    updateAutoIntervalIfRunning();
+                    reply = `✅ Đã cập nhật chu kỳ chạy: *${hours} giờ*`;
+                } else {
+                    reply = "❌ Thời gian không hợp lệ. Ví dụ: /interval 1 (cho 1 giờ)";
+                }
+            }
             else if (command === '/now') {
                 reply = "⏳ Đang chạy phân tích AI theo yêu cầu...";
                 await sendMessageToChat(chatId, reply);
-                startAnalysis(true); // Trigger Auto Analysis logic
-                return; // startAnalysis sends its own report
+                startAnalysis(true); 
+                return; 
             }
             else {
                 reply = "❓ Lệnh không hiểu. Gõ `/help` để xem hướng dẫn.";
@@ -643,10 +662,12 @@ _Reply các lệnh sau để điều khiển:_
         }
 
         function updateAutoIntervalIfRunning() {
+            const hours = parseFloat(document.getElementById('autoInterval').value) || 1;
             if (document.getElementById('autoToggle').checked) {
-                const hours = parseFloat(document.getElementById('autoInterval').value) || 1;
-                updateStatus(`Đã cập nhật chu kỳ: ${hours} giờ`, "process");
-                scheduleNextRun(hours);
+                updateStatus(`Đã cập nhật chu kỳ: ${hours} giờ (Auto ON)`, "process");
+                scheduleNextRun(hours); // Reset timer
+            } else {
+                updateStatus(`Đã lưu chu kỳ: ${hours} giờ (Auto OFF)`, "normal");
             }
         }
 
@@ -855,7 +876,18 @@ _Reply các lệnh sau để điều khiển:_
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
                 });
+                
                 const data = await response.json();
+                
+                // KIỂM TRA LỖI API TRƯỚC KHI XỬ LÝ
+                if (data.error) {
+                    throw new Error(data.error.message || "Lỗi từ Google API");
+                }
+                
+                if (!data.candidates || data.candidates.length === 0) {
+                    throw new Error("AI không trả về kết quả (Có thể do bộ lọc an toàn)");
+                }
+
                 const text = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
                 const json = JSON.parse(text);
 
@@ -869,16 +901,18 @@ _Reply các lệnh sau để điều khiển:_
                 document.getElementById('targetPrice').textContent = `Target: ${json.price_target}`;
                 document.getElementById('aiReasoning').innerHTML = json.reasoning.replace(/-/g, '<br>• ');
 
-                // Send Telegram Notification
+                // Send Telegram Notification (Gửi kèm Reasoning)
                 if (document.getElementById('autoToggle').checked || isAuto) {
-                    await sendReportTelegram(json.trend, json.price_target);
+                    await sendReportTelegram(json.trend, json.price_target, json.reasoning);
                 }
                 
                 updateStatus("Phân tích hoàn tất", "normal");
 
             } catch (e) {
                 console.error(e);
-                if(!isAuto) alert("Lỗi AI: " + e.message);
+                const errMsg = "Lỗi AI: " + e.message;
+                updateStatus(errMsg, "error");
+                if(!isAuto) alert(errMsg);
             } finally {
                 if(!isAuto) { btn.innerHTML = '<i class="fa-solid fa-bolt"></i> PHÂN TÍCH NGAY'; btn.disabled = false; }
             }
@@ -892,7 +926,7 @@ _Reply các lệnh sau để điều khiển:_
         }
 
         window.onload = () => { 
-            loadCredentials();
+            // Removed: loadCredentials();
             initChart(); 
             initPairs(); 
         };
