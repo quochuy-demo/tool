@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini Crypto AI Predictor 4.2 Auto-Bot Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js cho biểu đồ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;600;700&display=swap"
+        rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        .font-mono {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Hiệu ứng Neon */
+        .neon-text-green {
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .neon-text-red {
+            text-shadow: 0 0 10px rgba(255, 77, 77, 0.5);
+        }
+
+        .glass-panel {
+            background: rgba(30, 30, 30, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Scrollbar tinh tế */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #3b8ed0;
+            border-radius: 3px;
+        }
+
+        /* Animation cho giá nhảy */
+        @keyframes flashGreen {
+            0% {
+                color: #00ff88;
+            }
+
+            100% {
+                color: white;
+            }
+        }
+
+        @keyframes flashRed {
+            0% {
+                color: #ff4d4d;
+            }
+
+            100% {
+                color: white;
+            }
+        }
+
+        .flash-up {
+            animation: flashGreen 1s ease-out;
+        }
+
+        .flash-down {
+            animation: flashRed 1s ease-out;
+        }
+    </style>
+</head>
+
+<body class="bg-[#0f0f0f] text-white h-screen flex overflow-hidden selection:bg-[#3b8ed0] selection:text-white">
+
+    <!-- SIDEBAR -->
+    <aside class="w-96 bg-[#141414] flex flex-col border-r border-gray-800 shadow-2xl z-20">
+        <div class="p-6 border-b border-gray-800 text-center">
+            <h1 class="text-xl font-bold tracking-widest text-[#3b8ed0] flex items-center justify-center gap-2">
+                <i class="fa-solid fa-robot"></i> GEMINI AUTO
+            </h1>
+            <div class="flex items-center justify-center gap-2 mt-2">
+                <span class="relative flex h-2 w-2">
+                    <span
+                        class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                    <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                </span>
+                <p class="text-[10px] text-gray-500 font-mono uppercase">System Active</p>
+            </div>
+        </div>
+
+        <div class="p-5 flex-1 overflow-y-auto space-y-6">
+
+            <!-- Pair Selection -->
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase mb-2 tracking-wider">Cặp Tiền
+                    (Pair)</label>
+                <div class="relative mb-2">
+                    <input type="text" id="pairSearch" placeholder="Tìm (VD: ETH)..."
+                        class="w-full bg-[#1e1e1e] border border-gray-700 rounded-lg pl-8 pr-4 py-2 text-xs focus:outline-none focus:border-[#3b8ed0] text-white font-mono uppercase"
+                        oninput="filterPairs()">
+                    <i class="fa-solid fa-search absolute left-3 top-2.5 text-gray-500 text-xs"></i>
+                </div>
+                <select id="pairSelect" onchange="handlePairChange()"
+                    class="w-full bg-[#1e1e1e] border border-gray-700 rounded-lg p-2 text-xs focus:outline-none focus:border-[#3b8ed0] text-gray-300 font-mono">
+                    <option value="" disabled selected>Đang tải...</option>
+                </select>
+            </div>
+
+            <!-- MY PREDICTION (Dự đoán của bạn) -->
+            <div class="bg-[#1e1e1e] p-4 rounded-xl border border-gray-700 shadow-inner">
+                <h3 class="text-xs font-bold text-[#3b8ed0] uppercase mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-user-astronaut"></i> Dữ liệu của bạn
+                </h3>
+
+                <div class="grid grid-cols-2 gap-2 mb-2">
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-1">Bạn đánh?</label>
+                        <select id="userPosition" onchange="calculatePnL(marketDataGlobal?.currentPrice || 0)"
+                            class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white cursor-pointer hover:border-[#3b8ed0]">
+                            <option value="LONG">LONG (Lên)</option>
+                            <option value="SHORT">SHORT (Xuống)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-500 mb-1">Số tiền ($)</label>
+                        <input type="number" id="userAmount" value="1000"
+                            oninput="calculatePnL(marketDataGlobal?.currentPrice || 0)"
+                            class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono">
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="block text-[10px] text-gray-500 mb-1">Giá vào lệnh (Entry Price)</label>
+                    <div class="flex gap-1">
+                        <input type="number" id="userEntry" placeholder="VD: 95000"
+                            oninput="calculatePnL(marketDataGlobal?.currentPrice || 0)"
+                            class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono">
+                        <button onclick="fillCurrentPrice()"
+                            class="bg-gray-700 hover:bg-gray-600 px-2 rounded text-[10px] whitespace-nowrap">Lấy giá
+                            ngay</button>
+                    </div>
+                </div>
+
+                <!-- Target Date Input -->
+                <div class="mb-3">
+                    <label class="block text-[10px] text-gray-500 mb-1 font-bold text-[#3b8ed0]">Phân tích đến thời
+                        gian:</label>
+                    <input type="datetime-local" id="targetDate"
+                        class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-2 text-xs text-white font-mono focus:border-[#3b8ed0] outline-none">
+                </div>
+
+                <!-- PnL Live Display -->
+                <div class="border-t border-gray-700 pt-2 mt-2 bg-black/20 p-2 rounded">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[10px] text-gray-400 uppercase">Trạng thái:</span>
+                        <span id="pnlStatusText" class="text-[10px] font-bold text-gray-500">---</span>
+                    </div>
+                    <div class="flex justify-between items-end">
+                        <span class="text-[10px] text-gray-400 uppercase">Lời/Lỗ:</span>
+                        <span id="pnlDisplay" class="text-lg font-bold font-mono text-gray-500">---</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AUTOMATION & TELEGRAM -->
+            <div class="bg-[#1e1e1e] p-4 rounded-xl border border-gray-700 border-l-4 border-l-purple-500">
+                <h3 class="text-xs font-bold text-purple-400 uppercase mb-3 flex items-center gap-2">
+                    <i class="fa-brands fa-telegram"></i> Cấu hình Auto-Bot
+                </h3>
+
+                <div class="space-y-2 mb-4">
+                    <div>
+                        <label class="block text-[10px] text-gray-500">Chu kỳ báo cáo (Giờ)</label>
+                        <input type="number" id="autoInterval" value="1" min="0.1" step="0.1"
+                            class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-500">Telegram Bot Token (từ @BotFather)</label>
+                        <input type="password" id="teleToken" placeholder="Nhập Token..."
+                            class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] text-gray-500">Telegram Chat ID (từ @userinfobot)</label>
+                        <input type="text" id="teleChatId" placeholder="Nhập ID..."
+                            class="w-full bg-[#2b2b2b] border border-gray-600 rounded px-2 py-1 text-xs text-white font-mono">
+                    </div>
+                </div>
+
+                <div class="flex items-center justify-between">
+                    <label class="relative inline-flex items-center cursor-pointer">
+                        <input type="checkbox" id="autoToggle" class="sr-only peer" onchange="toggleAutoRun()">
+                        <div
+                            class="w-9 h-5 bg-gray-600 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-purple-500 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-purple-600">
+                        </div>
+                        <span class="ml-2 text-xs font-medium text-gray-300">Bật Auto</span>
+                    </label>
+                    <div id="autoStatusIcon" class="hidden animate-pulse text-green-500 text-xs"><i
+                            class="fa-solid fa-circle"></i> Running</div>
+                </div>
+                <div id="nextRunTime" class="text-[10px] text-gray-500 mt-2 italic text-right h-4"></div>
+            </div>
+
+            <!-- Analyze Button (Manual) -->
+            <button onclick="startAnalysis(false)" id="analyzeBtn"
+                class="w-full bg-gradient-to-r from-[#3b8ed0] to-[#2a6b9c] hover:from-[#4aa3e8] hover:to-[#3b8ed0] text-white font-bold py-3 rounded-lg shadow-lg transform transition active:scale-95 flex items-center justify-center gap-2 group">
+                <i class="fa-solid fa-bolt group-hover:animate-pulse"></i> PHÂN TÍCH NGAY
+            </button>
+
+            <div id="statusMsg" class="text-center text-[10px] text-gray-500 font-mono min-h-[15px]">
+                System Ready
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT -->
+    <main class="flex-1 flex flex-col h-full overflow-hidden relative bg-[#0f0f0f]">
+        <!-- Background Grid -->
+        <div class="absolute inset-0 z-0 opacity-10"
+            style="background-image: linear-gradient(#333 1px, transparent 1px), linear-gradient(90deg, #333 1px, transparent 1px); background-size: 40px 40px;">
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-6 relative z-10">
+
+            <!-- Top Bar: Price & Chart -->
+            <div class="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-6">
+                <!-- Price Box -->
+                <div class="glass-panel rounded-xl p-6 flex flex-col justify-between relative overflow-hidden">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 text-6xl text-white">
+                        <i class="fa-brands fa-bitcoin"></i>
+                    </div>
+                    <div>
+                        <h2 id="symbolDisplay" class="text-gray-400 text-xs font-bold font-mono mb-2">BTC/USDT</h2>
+                        <div class="flex items-baseline gap-2">
+                            <span id="priceDisplay"
+                                class="text-4xl font-bold text-white tracking-tighter font-mono transition-colors duration-300">---</span>
+                        </div>
+                        <div id="priceChange" class="text-sm font-medium text-gray-400 mt-1 font-mono">---%</div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-700 grid grid-cols-2 gap-2 text-xs">
+                        <div><span class="text-gray-500 block">High (24h)</span><span id="highPrice"
+                                class="text-white font-mono">---</span></div>
+                        <div><span class="text-gray-500 block">Low (24h)</span><span id="lowPrice"
+                                class="text-white font-mono">---</span></div>
+                    </div>
+                </div>
+
+                <!-- Main Chart Area -->
+                <div class="glass-panel rounded-xl p-4 lg:col-span-3 flex flex-col">
+                    <div class="flex justify-between items-center mb-2 px-2">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider"><i
+                                class="fa-solid fa-chart-line mr-1"></i> Biểu đồ Phân tích (H1)</h3>
+                        <div class="flex gap-2">
+                            <span class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-400">RSI</span>
+                            <span class="text-[10px] bg-gray-800 px-2 py-1 rounded text-gray-400">Bollinger</span>
+                        </div>
+                    </div>
+                    <div class="relative w-full h-64 lg:h-72">
+                        <canvas id="cryptoChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Indicators Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                <!-- RSI -->
+                <div class="glass-panel p-4 rounded-xl border-l-2 border-[#3b8ed0]">
+                    <span class="block text-gray-500 text-[10px] font-bold uppercase mb-1">RSI (14)</span>
+                    <div class="flex justify-between items-end">
+                        <span id="rsiValue" class="text-2xl font-mono font-bold text-white">---</span>
+                        <div id="rsiBar" class="w-10 h-1 bg-gray-700 rounded-full overflow-hidden">
+                            <div class="h-full bg-[#3b8ed0]" style="width: 50%"></div>
+                        </div>
+                    </div>
+                    <div id="rsiStatus" class="text-[10px] mt-1 text-gray-400 font-mono text-right">Neutral</div>
+                </div>
+                <!-- MACD -->
+                <div class="glass-panel p-4 rounded-xl border-l-2 border-purple-500">
+                    <span class="block text-gray-500 text-[10px] font-bold uppercase mb-1">MACD</span>
+                    <span id="macdValue" class="text-2xl font-mono font-bold text-white">---</span>
+                    <div id="macdStatus" class="text-[10px] mt-1 text-gray-400 font-mono text-right">---</div>
+                </div>
+                <!-- Volatility -->
+                <div class="glass-panel p-4 rounded-xl border-l-2 border-orange-500">
+                    <span class="block text-gray-500 text-[10px] font-bold uppercase mb-1">BB Width</span>
+                    <span id="bbValue" class="text-2xl font-mono font-bold text-white">---</span>
+                    <div id="bbStatus" class="text-[10px] mt-1 text-gray-400 font-mono text-right">---</div>
+                </div>
+                <!-- Volume -->
+                <div class="glass-panel p-4 rounded-xl border-l-2 border-green-500">
+                    <span class="block text-gray-500 text-[10px] font-bold uppercase mb-1">Volume 24H</span>
+                    <span id="volumeValue" class="text-xl font-mono font-bold text-white truncate">---</span>
+                    <div class="text-[10px] mt-1 text-gray-400 font-mono text-right">USDT</div>
+                </div>
+            </div>
+
+            <!-- AI Prediction Result -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Prediction Summary -->
+                <div
+                    class="glass-panel rounded-xl p-6 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+                    <div class="absolute inset-0 bg-gradient-to-b from-transparent to-black opacity-50"></div>
+                    <div class="relative z-10">
+                        <h3 class="text-gray-500 font-bold text-xs uppercase mb-4 tracking-widest">GEMINI DỰ BÁO</h3>
+                        <div id="trendIcon"
+                            class="text-7xl mb-4 text-gray-700 transition-all duration-500 transform group-hover:scale-110">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <div id="trendText" class="text-2xl font-bold mb-2 text-gray-500 font-mono uppercase">WAITING...
+                        </div>
+                        <div id="targetPrice"
+                            class="text-xs text-[#3b8ed0] bg-[#1e1e1e] px-3 py-1 rounded border border-gray-700 font-mono">
+                            Target: ---</div>
+                    </div>
+                </div>
+
+                <!-- AI Reasoning Text -->
+                <div class="glass-panel rounded-xl p-6 lg:col-span-2">
+                    <div class="flex items-center gap-2 mb-4 border-b border-gray-700 pb-2">
+                        <i class="fa-solid fa-align-left text-[#3b8ed0]"></i>
+                        <h3 class="text-white font-bold text-sm">Phân tích chi tiết</h3>
+                    </div>
+                    <div id="aiReasoning"
+                        class="text-gray-300 text-sm leading-7 font-light whitespace-pre-wrap h-40 overflow-y-auto pr-2 custom-scrollbar">
+                        <span class="text-gray-600 italic">Chọn ngày giờ bạn muốn dự báo và nhấn nút Phân Tích...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // --- CẤU HÌNH ---
+        const API_KEY = "AIzaSyCnZXE61CVZhyzvdxx4EPJPlpilDxQFOSw"; // KEY CỨNG
+        const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
+
+        let currentPair = "BTCUSDT";
+        let allSymbols = [];
+        let updateInterval = null;
+        let autoRunInterval = null;
+        let chartInstance = null;
+        let marketDataGlobal = null;
+        let currentPnLData = { pnl: 0, percent: 0, isProfit: false };
+
+        // Set default date (Next 24h)
+        const dateInput = document.getElementById('targetDate');
+        const now = new Date();
+        now.setHours(now.getHours() + 24);
+        const pad = (n) => String(n).padStart(2, '0');
+        // format: YYYY-MM-DDTHH:MM
+        dateInput.value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}T${pad(now.getHours())}:${pad(now.getMinutes())}`;
+
+
+        // --- CHART SETUP ---
+        function initChart() {
+            const ctx = document.getElementById('cryptoChart').getContext('2d');
+            Chart.defaults.color = '#666';
+            Chart.defaults.font.family = "'JetBrains Mono', monospace";
+            chartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'Price', data: [], borderColor: '#3b8ed0', backgroundColor: 'rgba(59, 142, 208, 0.1)', borderWidth: 2, tension: 0.3, fill: true, pointRadius: 0 },
+                        { label: 'Upper BB', data: [], borderColor: 'rgba(255, 255, 255, 0.2)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false },
+                        { label: 'Lower BB', data: [], borderColor: 'rgba(255, 255, 255, 0.2)', borderWidth: 1, borderDash: [5, 5], pointRadius: 0, fill: false }
+                    ]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    interaction: { mode: 'index', intersect: false },
+                    plugins: { legend: { display: false } },
+                    scales: { x: { grid: { color: '#222' }, ticks: { maxTicksLimit: 8 } }, y: { grid: { color: '#222' }, position: 'right' } }
+                }
+            });
+        }
+
+        // --- PNL CALCULATION ---
+        function calculatePnL(currentPrice) {
+            const entryInput = document.getElementById('userEntry').value;
+            const amountInput = document.getElementById('userAmount').value;
+            const position = document.getElementById('userPosition').value;
+
+            // Chuyển đổi về số an toàn
+            const entry = parseFloat(entryInput);
+            const amount = parseFloat(amountInput);
+
+            // Kiểm tra tính hợp lệ
+            if (isNaN(entry) || isNaN(amount) || entry <= 0 || amount <= 0) {
+                document.getElementById('pnlDisplay').textContent = "---";
+                return;
+            }
+
+            let percent = 0;
+            if (position === 'LONG') {
+                percent = ((currentPrice - entry) / entry) * 100;
+            } else {
+                percent = ((entry - currentPrice) / entry) * 100;
+            }
+
+            const pnl = amount * (percent / 100);
+            const isProfit = pnl >= 0;
+
+            currentPnLData = { pnl, percent, isProfit };
+
+            // Update UI
+            const pnlDisplay = document.getElementById('pnlDisplay');
+            const statusText = document.getElementById('pnlStatusText');
+
+            statusText.textContent = isProfit ? "ĐANG LÃI (WINNING)" : "ĐANG LỖ (LOSING)";
+            statusText.className = `text-[10px] font-bold uppercase ${isProfit ? 'text-[#00ff88]' : 'text-[#ff4d4d]'}`;
+
+            pnlDisplay.textContent = `${pnl >= 0 ? '+' : ''}${pnl.toFixed(2)}$ (${percent.toFixed(2)}%)`;
+            pnlDisplay.className = `text-lg font-bold font-mono ${isProfit ? 'text-[#00ff88]' : 'text-[#ff4d4d]'}`;
+        }
+
+        function fillCurrentPrice() {
+            if (marketDataGlobal) {
+                document.getElementById('userEntry').value = marketDataGlobal.currentPrice;
+                calculatePnL(marketDataGlobal.currentPrice);
+            }
+        }
+
+        // --- TELEGRAM NOTIFICATION ---
+        async function sendTelegram(aiTrend, aiTarget) {
+            const token = document.getElementById('teleToken').value.trim();
+            const chatId = document.getElementById('teleChatId').value.trim();
+
+            if (!token || !chatId) {
+                updateStatus("Chưa cấu hình Telegram Bot!", "error");
+                return;
+            }
+
+            const positionRaw = document.getElementById('userPosition').value;
+            const positionText = positionRaw === 'LONG' ? "Dự đoán TĂNG 📈 (LONG)" : "Dự đoán GIẢM 📉 (SHORT)";
+            const entry = document.getElementById('userEntry').value;
+            const amount = document.getElementById('userAmount').value;
+
+            // Icon trạng thái và format tiền
+            const pnlValue = currentPnLData.pnl.toFixed(2);
+            const pnlPercent = currentPnLData.percent.toFixed(2);
+
+            let pnlHeader = "";
+            if (currentPnLData.isProfit) {
+                pnlHeader = `🟢 *BẠN ĐANG LÃI +${pnlValue}$*`;
+            } else {
+                pnlHeader = `🔴 *BẠN ĐANG LỖ ${pnlValue}$*`;
+            }
+
+            const trendIcon = aiTrend.includes("TĂNG") ? "🚀" : "🩸";
+
+            // Lấy thời gian hiện tại
+            const nowTime = new Date().toLocaleTimeString('vi-VN');
+
+            const message = `
+🔔 *CRYPTO AUTO REPORT* - ${nowTime}
+━━━━━━━━━━━━━━━━━━
+💰 *CẶP:* ${currentPair}
+💵 *GIÁ HIỆN TẠI:* ${marketDataGlobal.currentPrice.toLocaleString()} USDT
+
+📊 *VỊ THẾ CỦA BẠN:*
+• Loại: ${positionText}
+• Entry: ${entry} USDT
+• Vốn: ${amount}$
+━━━━━━━━━━━━━━━━━━
+${pnlHeader}
+(ROI: ${pnlPercent}%)
+━━━━━━━━━━━━━━━━━━
+🧠 *AI GEMINI DỰ BÁO:*
+• Xu hướng: ${aiTrend} ${trendIcon}
+• Target: ${aiTarget} USDT
+━━━━━━━━━━━━━━━━━━
+_Treo máy tự động v4.2_
+            `;
+
+            try {
+                const url = `https://api.telegram.org/bot${token}/sendMessage`;
+                await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        chat_id: chatId,
+                        text: message,
+                        parse_mode: 'Markdown'
+                    })
+                });
+                updateStatus("Đã gửi báo cáo Telegram!", "process");
+            } catch (e) {
+                console.error("Lỗi gửi Telegram", e);
+                updateStatus("Lỗi gửi Telegram", "error");
+            }
+        }
+
+        // --- AUTO RUN LOGIC ---
+        function toggleAutoRun() {
+            const isChecked = document.getElementById('autoToggle').checked;
+            const intervalHours = parseFloat(document.getElementById('autoInterval').value) || 1;
+            const nextRunEl = document.getElementById('nextRunTime');
+            const statusIcon = document.getElementById('autoStatusIcon');
+
+            if (autoRunInterval) clearInterval(autoRunInterval);
+
+            if (isChecked) {
+                // Đổi sang mili giây (hours * 60 * 60 * 1000)
+                // Để demo test nhanh, có thể dùng intervalHours * 1000 * 60 (phút) nếu cần
+                const ms = intervalHours * 60 * 60 * 1000;
+
+                updateStatus(`Auto-Bot ON: Báo cáo mỗi ${intervalHours} giờ`, "process");
+                statusIcon.classList.remove('hidden');
+
+                // Chạy ngay lần đầu khi bật
+                startAnalysis(true);
+
+                // Hẹn giờ lặp lại
+                autoRunInterval = setInterval(() => {
+                    startAnalysis(true);
+                    updateNextRunTime(ms);
+                }, ms);
+
+                updateNextRunTime(ms);
+
+            } else {
+                updateStatus("Đã tắt Auto-Bot", "normal");
+                nextRunEl.textContent = "";
+                statusIcon.classList.add('hidden');
+            }
+        }
+
+        function updateNextRunTime(ms) {
+            const nextTime = new Date(Date.now() + ms);
+            document.getElementById('nextRunTime').textContent = `Báo cáo tiếp theo: ${nextTime.toLocaleTimeString()}`;
+        }
+
+        // --- REALTIME DATA ---
+        function startRealtimeTracking(symbol) {
+            if (updateInterval) clearInterval(updateInterval);
+            document.getElementById('symbolDisplay').textContent = symbol.replace("USDT", "/USDT");
+            fetchAndRender(symbol);
+            updateInterval = setInterval(() => { fetchAndRender(symbol, true); }, 5000);
+        }
+
+        async function fetchAndRender(symbol, silent = false) {
+            const data = await getBinanceData(symbol);
+            if (data) {
+                marketDataGlobal = data;
+                updateUI(data);
+                // Liên tục cập nhật PnL theo giá mới nhất mà không cần nhập lại
+                calculatePnL(data.currentPrice);
+                if (!silent) updateStatus("Live Data Active", "process");
+            }
+        }
+
+        async function getBinanceData(symbol) {
+            try {
+                const res = await fetch(`https://api.binance.com/api/v3/klines?symbol=${symbol}&interval=1h&limit=50`);
+                const raw = await res.json();
+                if (!Array.isArray(raw)) return null;
+
+                const closes = raw.map(c => parseFloat(c[4]));
+                const highs = raw.map(c => parseFloat(c[2]));
+                const lows = raw.map(c => parseFloat(c[3]));
+                const volumes = raw.map(c => parseFloat(c[5]));
+                const timestamps = raw.map(c => {
+                    const date = new Date(c[0]);
+                    return `${String(date.getHours()).padStart(2, '0')}:00`;
+                });
+
+                const currentPrice = closes[closes.length - 1];
+                const prevPrice = closes[closes.length - 2];
+                const sma20 = calculateSMA(closes, 20);
+                const stdDev = calculateStdDev(closes, 20, sma20);
+                const upperBB = sma20 + (2 * stdDev);
+                const lowerBB = sma20 - (2 * stdDev);
+                const bbWidth = ((upperBB - lowerBB) / sma20) * 100;
+                const rsi = calculateRSI(closes, 14);
+                const { macdLine, histogram } = calculateMACD(closes);
+
+                return {
+                    symbol, currentPrice, prevPrice,
+                    high24: Math.max(...highs.slice(-24)),
+                    low24: Math.min(...lows.slice(-24)),
+                    vol24: volumes.slice(-24).reduce((a, b) => a + b, 0),
+                    rsi, macd: macdLine, macdHist: histogram,
+                    bbUpper: upperBB, bbLower: lowerBB, bbWidth,
+                    chartData: {
+                        labels: timestamps.slice(-30),
+                        prices: closes.slice(-30),
+                        bbUppers: closes.slice(-30).map((_, i) => {
+                            const s = calculateSMA(closes.slice(0, closes.length - 30 + i + 1), 20);
+                            const d = calculateStdDev(closes.slice(0, closes.length - 30 + i + 1), 20, s);
+                            return s + 2 * d;
+                        }),
+                        bbLowers: closes.slice(-30).map((_, i) => {
+                            const s = calculateSMA(closes.slice(0, closes.length - 30 + i + 1), 20);
+                            const d = calculateStdDev(closes.slice(0, closes.length - 30 + i + 1), 20, s);
+                            return s - 2 * d;
+                        })
+                    }
+                };
+            } catch (e) { console.error(e); return null; }
+        }
+
+        function updateUI(data) {
+            const priceEl = document.getElementById('priceDisplay');
+            const oldPrice = parseFloat(priceEl.textContent.replace(/,/g, '')) || 0;
+            priceEl.textContent = data.currentPrice.toLocaleString('en-US', { minimumFractionDigits: 2 });
+
+            if (data.currentPrice > oldPrice) { priceEl.classList.remove('flash-down'); priceEl.classList.add('flash-up'); setTimeout(() => priceEl.classList.remove('flash-up'), 1000); }
+            else if (data.currentPrice < oldPrice) { priceEl.classList.remove('flash-up'); priceEl.classList.add('flash-down'); setTimeout(() => priceEl.classList.remove('flash-down'), 1000); }
+
+            const changeP = ((data.currentPrice - data.prevPrice) / data.prevPrice) * 100;
+            const changeEl = document.getElementById('priceChange');
+            changeEl.innerHTML = `${changeP >= 0 ? '▲' : '▼'} ${Math.abs(changeP).toFixed(2)}%`;
+            changeEl.className = `text-sm font-medium font-mono mt-1 ${changeP >= 0 ? 'text-[#00ff88]' : 'text-[#ff4d4d]'}`;
+
+            document.getElementById('highPrice').textContent = data.high24.toLocaleString();
+            document.getElementById('lowPrice').textContent = data.low24.toLocaleString();
+
+            // Indicators UI update...
+            document.getElementById('rsiValue').textContent = data.rsi.toFixed(1);
+            document.querySelector('#rsiBar div').style.width = `${Math.min(data.rsi, 100)}%`;
+            document.querySelector('#rsiBar div').className = `h-full ${data.rsi > 70 ? 'bg-red-500' : data.rsi < 30 ? 'bg-green-500' : 'bg-[#3b8ed0]'}`;
+            document.getElementById('macdValue').textContent = data.macd.toFixed(2);
+            document.getElementById('bbValue').textContent = data.bbWidth.toFixed(2) + "%";
+            document.getElementById('volumeValue').textContent = (data.vol24 * data.currentPrice).toLocaleString('en-US', { maximumFractionDigits: 0, notation: "compact" });
+
+            if (chartInstance) {
+                chartInstance.data.labels = data.chartData.labels;
+                chartInstance.data.datasets[0].data = data.chartData.prices;
+                chartInstance.data.datasets[1].data = data.chartData.bbUppers;
+                chartInstance.data.datasets[2].data = data.chartData.bbLowers;
+                chartInstance.update('none');
+            }
+        }
+
+        // --- MATH UTILS ---
+        function calculateSMA(d, p) { if (d.length < p) return 0; return d.slice(-p).reduce((a, b) => a + b, 0) / p; }
+        function calculateStdDev(d, p, s) { if (d.length < p) return 0; return Math.sqrt(d.slice(-p).map(v => Math.pow(v - s, 2)).reduce((a, b) => a + b, 0) / p); }
+        function calculateRSI(c, p) { let g = 0, l = 0; for (let i = c.length - p - 1; i < c.length - 1; i++) { let d = c[i + 1] - c[i]; if (d >= 0) g += d; else l -= d; } return 100 - (100 / (1 + ((g / p) / (l / p || 1)))); }
+        function calculateMACD(c) {
+            const ema = (d, p) => { let k = 2 / (p + 1), e = d[0]; for (let i = 1; i < d.length; i++)e = d[i] * k + e * (1 - k); return e; };
+            const m = ema(c, 12) - ema(c, 26); return { macdLine: m, histogram: m - (m * 0.9) };
+        }
+
+        // --- SEARCH ---
+        async function initPairs() {
+            try {
+                const res = await fetch('https://api.binance.com/api/v3/exchangeInfo');
+                const data = await res.json();
+                allSymbols = data.symbols.filter(s => s.status === 'TRADING' && s.quoteAsset === 'USDT').map(s => s.symbol).sort();
+                renderPairs(allSymbols);
+                document.getElementById('pairSelect').value = "BTCUSDT";
+                handlePairChange();
+            } catch (e) { console.error(e); }
+        }
+        function renderPairs(list) {
+            const s = document.getElementById('pairSelect'); s.innerHTML = '';
+            list.slice(0, 100).forEach(x => { const o = document.createElement('option'); o.value = x; o.textContent = x; s.appendChild(o) });
+        }
+        function filterPairs() {
+            const v = document.getElementById('pairSearch').value.toUpperCase();
+            renderPairs(allSymbols.filter(s => s.includes(v)));
+        }
+        function handlePairChange() {
+            currentPair = document.getElementById('pairSelect').value;
+            if (currentPair) startRealtimeTracking(currentPair);
+        }
+
+        // --- AI ANALYSIS ---
+        async function startAnalysis(isAuto = false) {
+            if (!marketDataGlobal) return;
+            const btn = document.getElementById('analyzeBtn');
+            if (!isAuto) { btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> ĐANG XỬ LÝ...'; btn.disabled = true; }
+
+            updateStatus("AI đang phân tích...", "process");
+
+            // XỬ LÝ THỜI GIAN
+            // Ưu tiên lấy từ input "Target Date"
+            let targetTimeStr = "";
+            const dateInputVal = document.getElementById('targetDate').value;
+
+            if (dateInputVal) {
+                // Nếu người dùng chọn ngày giờ cụ thể
+                const selectedDate = new Date(dateInputVal);
+                targetTimeStr = selectedDate.toLocaleString('vi-VN');
+            } else {
+                // Mặc định cộng thêm interval nếu không chọn ngày
+                const nextTime = new Date();
+                const intervalHours = parseFloat(document.getElementById('autoInterval').value) || 1;
+                nextTime.setHours(nextTime.getHours() + intervalHours);
+                targetTimeStr = nextTime.toLocaleString('vi-VN');
+            }
+
+            // Lấy thông tin dự đoán của user để thêm vào prompt
+            const userPos = document.getElementById('userPosition').value === 'LONG' ? "TĂNG" : "GIẢM";
+            const userEntry = document.getElementById('userEntry').value;
+
+            const prompt = `
+            Đóng vai chuyên gia Trading. Coin: ${marketDataGlobal.symbol}. Giá hiện tại: ${marketDataGlobal.currentPrice}.
+            RSI: ${marketDataGlobal.rsi.toFixed(2)}. MACD: ${marketDataGlobal.macd.toFixed(2)}.
+            Người dùng đang dự đoán giá sẽ: ${userPos} (So với mốc Entry: ${userEntry}).
+            Hãy phân tích xu hướng giá đến thời điểm cụ thể: ${targetTimeStr}.
+            Trả về JSON duy nhất: {"trend": "TĂNG/GIẢM/SIDEWAY", "price_target": "số", "reasoning": "ngắn gọn tiếng việt, nhận xét về dự đoán của người dùng có khả thi không"}
+            `;
+
+            try {
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
+                const response = await fetch(url, {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+                });
+                const data = await response.json();
+                const text = data.candidates[0].content.parts[0].text.replace(/```json|```/g, '').trim();
+                const json = JSON.parse(text);
+
+                // UI Result
+                const isUp = json.trend.toUpperCase().includes('TĂNG');
+                const trendEl = document.getElementById('trendText');
+                trendEl.textContent = json.trend;
+                trendEl.className = `text-2xl font-bold mb-2 font-mono uppercase ${isUp ? 'text-[#00ff88]' : 'text-[#ff4d4d]'}`;
+                document.getElementById('trendIcon').innerHTML = isUp ? '<i class="fa-solid fa-rocket"></i>' : '<i class="fa-solid fa-arrow-trend-down"></i>';
+                document.getElementById('trendIcon').className = `text-7xl mb-4 transition-all duration-500 transform group-hover:scale-110 ${isUp ? 'text-[#00ff88]' : 'text-[#ff4d4d]'}`;
+                document.getElementById('targetPrice').textContent = `Target: ${json.price_target}`;
+                document.getElementById('aiReasoning').innerHTML = json.reasoning.replace(/-/g, '<br>• ');
+
+                // Send Telegram Notification
+                if (document.getElementById('autoToggle').checked || isAuto) {
+                    await sendTelegram(json.trend, json.price_target);
+                }
+
+                updateStatus("Phân tích hoàn tất", "normal");
+
+            } catch (e) {
+                console.error(e);
+                if (!isAuto) alert("Lỗi AI: " + e.message);
+            } finally {
+                if (!isAuto) { btn.innerHTML = '<i class="fa-solid fa-bolt"></i> PHÂN TÍCH NGAY'; btn.disabled = false; }
+            }
+        }
+
+        // --- UTILS ---
+        function updateStatus(msg, type) {
+            const el = document.getElementById('statusMsg');
+            if (!el) return;
+            el.textContent = msg;
+            el.className = `text-center text-[10px] font-mono min-h-[15px] ${type === 'process' ? 'text-[#3b8ed0] animate-pulse' : type === 'error' ? 'text-red-500 font-bold' : 'text-gray-500'}`;
+        }
+
+        window.onload = () => { initChart(); initPairs(); };
+    </script>
+</body>
+
+</html>
